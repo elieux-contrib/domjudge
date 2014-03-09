@@ -41,8 +41,15 @@ define('STRICTIPCHECK', false);
 // List of LDAP servers (space separated) to query when using the LDAP
 // authentication method. Secondly, DN to search in, where '&' will be
 // replaced by the authtoken as set in the team's DOMjudge database entry.
+// This replacement can be customized by modifying the ldap_get_dn_for_user
+// function.
 define('LDAP_SERVERS', 'ldaps://ldap1.example.com/ ldaps://ldap2.example.com/');
 define('LDAP_DNQUERY', 'CN=&,OU=users,DC=example,DC=com');
+
+function ldap_get_dn_for_user($user)
+{
+	return str_replace('&', $user, LDAP_DNQUERY);
+}
 
 // Set this to a notification command, which receives the notification
 // text on stdin. Examples below for notification by mail or prints.

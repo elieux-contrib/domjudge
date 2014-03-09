@@ -202,7 +202,7 @@ function ldap_check_credentials($user, $pass)
 */
 
 		// Create the dn
-		$ldap_dn = str_replace('&', $user, LDAP_DNQUERY);
+		$ldap_dn = ldap_get_dn_for_user($user);
 
 		// Try to login to test credentials
 		if ( @ldap_bind($conn, $ldap_dn, $pass) ) {
