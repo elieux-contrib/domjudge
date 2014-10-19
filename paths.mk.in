@@ -144,6 +144,7 @@ define substconfigvars
 @cat $< | sed \
 	-e "s|@configure_input[@]|Generated from '$<' on `date`.|g" \
 	-e 's,@DOMJUDGE_VERSION[@],@DOMJUDGE_VERSION@,g' \
+	-e 's,@prefix[@],@prefix@,g' \
 	-e 's,@domserver_bindir[@],@domserver_bindir@,g' \
 	-e 's,@domserver_etcdir[@],@domserver_etcdir@,g' \
 	-e 's,@domserver_wwwdir[@],@domserver_wwwdir@,g' \

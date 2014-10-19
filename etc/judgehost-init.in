@@ -1,0 +1,83 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          dj-judgehost-@DOMJUDGE_USER@
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Should-Start:      $network mysql
+# Should-Stop:       $network mysql
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: DOMjudge Judgedaemon
+### END INIT INFO
+
+PATH=@judgehost_bindir@:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=@judgehost_bindir@/judgedaemon
+NAME=judgedaemon-@DOMJUDGE_USER@
+OPTIONS='-d -v3'
+RUNDIR=@judgehost_rundir@
+PIDFILE=$RUNDIR$NAME.pid
+DESC="DOMjudge Judgedaemon"
+RUNAS=@DOMJUDGE_USER@
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+if [ ! -d $RUNDIR ]; then
+	mkdir -p $RUNDIR
+	chown $RUNAS $RUNDIR
+fi
+
+# Close some file descriptors beyond stdio, because these cannot be
+# closed in the judgedaemon PHP script, workaround for Debian postinst
+# hanging on open fd.
+exec 3>&-
+exec 4>&-
+exec 5>&-
+
+case "$1" in
+  start)
+	log_begin_msg "Starting $DESC: $NAME"
+	if [ -d @prefix@/chroot ]; then
+		mount -t proc proc @prefix@/chroot/proc
+	fi
+	start-stop-daemon --start --quiet --chuid $RUNAS --pidfile "$PIDFILE" --exec $DAEMON -- $OPTIONS
+	log_end_msg $?
+	;;
+  stop)
+	log_begin_msg "Stopping $DESC: $NAME"
+	start-stop-daemon --stop --quiet --retry 5 --pidfile $PIDFILE
+	if [ -d @prefix@/chroot ]; then
+		umount @prefix@/chroot/proc || true
+	fi
+	log_end_msg $?
+	;;
+  reload|force-reload|restart)
+	log_begin_msg "Restarting $DESC: $NAME"
+	if start-stop-daemon --stop --quiet --retry 5 --pidfile $PIDFILE; then
+		start-stop-daemon --start --quiet --chuid $RUNAS --pidfile "$PIDFILE" --exec $DAEMON -- $OPTIONS
+	fi
+	log_end_msg $?
+	;;
+  status)
+	echo -n "Status of $DESC: "
+	if [ ! -r "$PIDFILE" ]; then
+		echo "$NAME is not running."
+		exit 3
+	fi
+	if read pid < "$PIDFILE" && ps -p "$pid" > /dev/null 2>&1; then
+		echo "$NAME is running."
+		exit 0
+	else
+		echo "$NAME is not running but $PIDFILE exists."
+		exit 1
+	fi
+	;;
+  *)
+	N=/etc/init.d/${0##*/}
+	echo "Usage: $N {start|stop|restart|force-reload|status}" >&2
+	exit 1
+	;;
+esac
+
+exit 0
